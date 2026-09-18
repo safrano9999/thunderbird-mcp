@@ -264,3 +264,17 @@ thunderbird-mcp/
 ## License
 
 MIT. The bundled `httpd.sys.mjs` is from Mozilla and licensed under MPL-2.0.
+
+### Separate agent and Thunderbird containers
+
+Set `THUNDERBIRD_MCP_INLINE_ATTACHMENTS_ONLY=true` on the Node bridge when
+the MCP client and Thunderbird do not share a filesystem. This opt-in mode
+advertises and enforces inline `{name, contentType, base64}` attachments for
+`saveDraft`, `sendMail`, `replyToMessage` and `forwardMessage`, rejecting paths
+before any filesystem read or mail operation. Default local stdio path support
+is unchanged. Supply complete original file bytes, never fabricated Base64.
+
+The limit is 20 attachments and 25 MiB of encoded Base64 per attachment.
+If using an HTTP adapter such as Supergateway, configure its JSON body limit
+to 32 MiB to match the extension; the complete request must fit that limit.
+This environment flag does not configure the external HTTP adapter.
