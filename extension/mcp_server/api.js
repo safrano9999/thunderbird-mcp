@@ -727,7 +727,8 @@ const _claimedComposeWindows = new WeakSet();
 // the final quartet. In particular, do not silently discard invalid bytes.
 // Avoid a repeated capture/group for every quartet: large valid attachments
 // can exhaust the JavaScript regexp engine stack. Length enforces quartets.
-const STRICT_BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
+// The final lookahead requires the absolute end, unlike $ before a newline.
+const STRICT_BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}(?![\s\S])/;
 function isValidBase64(value) {
   return typeof value === "string" && value.length > 0 && value.length % 4 === 0 && STRICT_BASE64_PATTERN.test(value);
 }

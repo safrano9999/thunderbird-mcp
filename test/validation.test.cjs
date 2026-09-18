@@ -1458,7 +1458,7 @@ describe('large inline attachment Base64 validation', () => {
     for (const value of ['Zg==', 'Zm8=', 'Zm9v', 'AAAA']) {
       assert.equal(productionAttachmentValidation.isValidBase64(value), true);
     }
-    for (const value of ['', 'A', 'AA', 'AAA', 'A===', 'AA=A', 'AAAA=', 'AA==AAAA', 'AAAA\n', 'data:;base64,AAAA', '____', null]) {
+    for (const value of ['', 'A', 'AA', 'AAA', 'A===', 'AA=A', 'AAAA=', 'AA==AAAA', 'AAAA\n', 'AAA\n', 'AAA\r', 'AAA\u2028', 'AAA\u2029', 'data:;base64,AAAA', '____', null]) {
       assert.equal(productionAttachmentValidation.isValidBase64(value), false);
     }
   });
