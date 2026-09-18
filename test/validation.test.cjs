@@ -1447,3 +1447,19 @@ describe('isSensitiveFilePath: case insensitivity and slash normalization', () =
     assert.equal(isSensitiveFilePath('C:\\Users\\x\\.ssh\\id_rsa'), true);
   });
 });
+
+describe('large inline attachment Base64 validation', () => {
+  it('accepts a 12 MiB file without exhausting the regexp stack', () => {
+    const encoded = Buffer.alloc(12 * 1024 * 1024, 0x61).toString('base64');
+    assert.equal(productionAttachmentValidation.isValidBase64(encoded), true);
+  });
+
+  it('retains strict quartet, alphabet and final-padding checks', () => {
+    for (const value of ['Zg==', 'Zm8=', 'Zm9v', 'AAAA']) {
+      assert.equal(productionAttachmentValidation.isValidBase64(value), true);
+    }
+    for (const value of ['', 'A', 'AA', 'AAA', 'A===', 'AA=A', 'AAAA=', 'AA==AAAA', 'AAAA\n', 'AAA\n', 'AAA\r', 'AAA\u2028', 'AAA\u2029', 'data:;base64,AAAA', '____', null]) {
+      assert.equal(productionAttachmentValidation.isValidBase64(value), false);
+    }
+  });
+});

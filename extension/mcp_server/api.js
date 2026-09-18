@@ -725,9 +725,12 @@ const _claimedComposeWindows = new WeakSet();
 // BEGIN INLINE ATTACHMENT BASE64 HELPERS
 // Require canonical RFC 4648 base64: complete quartets with padding only in
 // the final quartet. In particular, do not silently discard invalid bytes.
-const STRICT_BASE64_PATTERN = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+// Avoid a repeated capture/group for every quartet: large valid attachments
+// can exhaust the JavaScript regexp engine stack. Length enforces quartets.
+// The final lookahead requires the absolute end, unlike $ before a newline.
+const STRICT_BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}(?![\s\S])/;
 function isValidBase64(value) {
-  return typeof value === "string" && value.length > 0 && STRICT_BASE64_PATTERN.test(value);
+  return typeof value === "string" && value.length > 0 && value.length % 4 === 0 && STRICT_BASE64_PATTERN.test(value);
 }
 // END INLINE ATTACHMENT BASE64 HELPERS
 // BEGIN OUTBOUND ATTACHMENT LIMITS
