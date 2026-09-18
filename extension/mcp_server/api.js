@@ -1142,13 +1142,13 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
         name: "getMessage",
         group: "messages", crud: "read",
         title: "Get Message",
-        description: "Read the full content of an email message by its ID",
+        description: "Read the full content of an email message by its ID. Paths returned in attachments[].filePath belong to the Thunderbird server filesystem, not the MCP client's filesystem. In a separate container or remote session, do not open these paths with your local terminal or file tools. Obtain original bytes through an explicitly available transfer mechanism or ask the user for the original file; never fabricate Base64 or silently omit a requested attachment.",
         inputSchema: {
           type: "object",
           properties: {
             messageId: { type: "string", description: "The message ID (from searchMessages results)" },
             folderPath: { type: "string", description: "The folder URI path (from searchMessages results)" },
-            saveAttachments: { type: "boolean", description: "If true, save attachments to <OS temp dir>/thunderbird-mcp/<messageId>/ and include filePath in response (default: false)" },
+            saveAttachments: { type: "boolean", description: "If true, save attachments to <OS temp dir>/thunderbird-mcp/<messageId>/ and include a Thunderbird-server-local filePath in response (default: false). This does not transfer the file to the MCP client; do not read it with client-local tools unless a shared filesystem is explicitly configured" },
             includeInlineImages: { type: "boolean", description: "If true, append supported inline email images as MCP image content blocks after the text result (default: false; max 1 MiB base64 per image and 4 MiB total). Images referenced by the rendered body are attempted first in document order, followed by remaining inline images in MIME order. Ignored when rawSource is true." },
             bodyFormat: { type: "string", enum: ["markdown", "text", "html"], description: "Body output format: 'markdown' (default, preserves structure), 'text' (plain text), 'html' (raw HTML)" },
             rawSource: { type: "boolean", description: "If true, return the full raw RFC 2822 message source (all headers + MIME parts). Useful for extracting calendar invites, S/MIME data, or debugging. Other fields (body, attachments) are omitted when this is set. Note: requires local/offline message copy; IMAP messages not cached offline may fail." },
@@ -1160,7 +1160,7 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
         name: "getMessages",
         group: "messages", crud: "read",
         title: "Get Messages",
-        description: `Read full email content for up to ${getMessagesLimit} messages in one call. Each item needs messageId and folderPath from searchMessages/getRecentMessages results.`,
+        description: `Read full email content for up to ${getMessagesLimit} messages in one call. Each item needs messageId and folderPath from searchMessages/getRecentMessages results. Paths returned in attachments[].filePath belong to the Thunderbird server filesystem, not the MCP client's filesystem. In a separate container or remote session, do not open these paths with your local terminal or file tools. Obtain original bytes through an explicitly available transfer mechanism or ask the user for the original file; never fabricate Base64 or silently omit a requested attachment.`,
         inputSchema: {
           type: "object",
           properties: {
@@ -1179,7 +1179,7 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
                 additionalProperties: false,
               },
             },
-            saveAttachments: { type: "boolean", description: "If true, save attachments for each message and include filePath in attachment metadata (default: false)" },
+            saveAttachments: { type: "boolean", description: "If true, save attachments for each message and include a Thunderbird-server-local filePath in attachment metadata (default: false). This does not transfer files to the MCP client; do not read them with client-local tools unless a shared filesystem is explicitly configured" },
             bodyFormat: { type: "string", enum: ["markdown", "text", "html"], description: "Body output format shared by all messages: 'markdown' (default), 'text', or 'html'" },
             rawSource: { type: "boolean", description: "If true, return raw RFC 2822 source for each message instead of parsed body fields" },
           },
@@ -6348,6 +6348,8 @@ var mcpServer = class extends ExtensionCommon.ExtensionAPI {
                                   }
 
                                   info.filePath = file.path;
+                                  info.filePathScope = "thunderbird-server";
+                                  info.filePathNote = "This path exists on the Thunderbird server only. It is not a downloaded file in the MCP client container. Do not open it with client-local tools unless a shared filesystem is explicitly configured. Obtain the original bytes through an available transfer mechanism or ask for the original file; never fabricate Base64.";
                                   done();
                                                                 } catch (e) {
                                   info.error = `Write failed: ${e}`;
